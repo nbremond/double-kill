@@ -10,12 +10,12 @@ var CmdSearch = cli.Command{
     Name:  "search",
     Usage: "Search for duplicates",
     Description: `Search for duplicates`,
-    Before: runMigrate,
+    Before: runSearch,
     Action: func(ctx *cli.Context) {},
     Flags:  []cli.Flag{},
 }
 
-func runMigrate(ctx *cli.Context) error {
+func runSearch(ctx *cli.Context) error {
     fmt.Println("It's working!")
 
     return nil
