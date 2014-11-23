@@ -15,3 +15,11 @@ type File struct {
     Hash        string `sql:"size:65"`
     UpdatedAt   time.Time
 }
+
+func init(){
+    register(&File{})
+}
+
+func (f *File) Save() {
+    db.Save(f)
+}
