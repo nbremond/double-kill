@@ -9,8 +9,6 @@ import (
 
 func init() {
     settings.Version = "0.0.0.1"
-    settings.DB.Engine = "sqlite3"
-    settings.DB.Source = "/tmp/test.db"
 }
 
 func main() {

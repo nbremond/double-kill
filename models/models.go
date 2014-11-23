@@ -24,7 +24,7 @@ func InitDB() error {
     }
     db.DB()
 
-    db.LogMode(true)
+    //db.LogMode(true)
     db.AutoMigrate(tables...)
     return nil
 }

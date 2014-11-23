@@ -1,15 +1,19 @@
-
 package commands
 
 import (
     "fmt"
     "os"
     "path/filepath"
+    "crypto/sha256"
+    "encoding/hex"
+    "log"
 
     "github.com/codegangsta/cli"
 
     "github.com/nbremond/double-kill/models"
 )
+
+const tinyHashSize = 10 * 1024
 
 var CmdSearch = cli.Command{
     Name:  "search",
@@ -35,14 +39,33 @@ func runSearch(c *cli.Context) error {
 func printFile(path string, info os.FileInfo, err error) error {
     if ! info.IsDir() {
         dir, filename := filepath.Split(path)
-        fmt.Println(info.ModTime())
-        file := models.File{
+        hashError := false
+        tinyHashString := ""
+        if file, fileErr := os.Open(path); fileErr != nil {
+            hashError =true
+        }else{
+            defer file.Close()
+            data := make([]byte, tinyHashSize)
+            n, readErr := file.Read(data)
+            if  readErr != nil {
+                hashError = true
+            }
+            if hashError {
+                log.Println("Unable to compute hash for \""+path+"\"")
+            }else{
+                tinyHash := sha256.New()
+                tinyHash.Write(data[:n])
+                tinyHashString = hex.EncodeToString(tinyHash.Sum(nil))
+            }
+        }
+        dbFile := models.File{
             Dir:        dir,
             Filename:   filename,
             Size:       int64(info.Size()),
             ModTime:    info.ModTime(),
+            TinyHash:   tinyHashString,
         }
-        file.Save()
+        dbFile.Save()
     }
     return nil
 }
