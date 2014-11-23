@@ -35,14 +35,12 @@ func runSearch(c *cli.Context) error {
 func printFile(path string, info os.FileInfo, err error) error {
     if ! info.IsDir() {
         dir, filename := filepath.Split(path)
-        fmt.Println(dir+filename)
+        fmt.Println(info.ModTime())
         file := models.File{
             Dir:        dir,
             Filename:   filename,
-            Size:       info.Size(),
-            UpdatedAt:  info.ModTime(),
-            Hash:       "",
-            TinyHash:   "",
+            Size:       int64(info.Size()),
+            ModTime:    info.ModTime(),
         }
         file.Save()
     }

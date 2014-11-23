@@ -13,7 +13,7 @@ type File struct {
     Size        int64
     TinyHash    string `sql:"size:65"`
     Hash        string `sql:"size:65"`
-    UpdatedAt   time.Time
+    ModTime     time.Time
 }
 
 func init(){

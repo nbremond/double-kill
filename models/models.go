@@ -17,7 +17,8 @@ func register(model interface{}) {
 }
 
 func InitDB() error {
-    db, err := orm.Open(settings.DB.Engine, settings.DB.Source)
+    var err error
+    db, err = orm.Open(settings.DB.Engine, settings.DB.Source)
     if err != nil {
         return err
     }
