@@ -2,6 +2,9 @@ package commands
 
 import (
     "fmt"
+    "os"
+    "path/filepath"
+    "strconv"
 
     "github.com/codegangsta/cli"
 )
@@ -15,8 +18,13 @@ var CmdSearch = cli.Command{
     Flags:  []cli.Flag{},
 }
 
-func runSearch(ctx *cli.Context) error {
+func runSearch(c *cli.Context) error {
     fmt.Println("It's working!")
+    filepath.Walk(c.Args()[0],printFile)
+    return nil
+}
 
+func printFile(path string, info os.FileInfo, err error) error {
+    fmt.Println(path + strconv.FormatInt(info.Size(), 10))
     return nil
 }

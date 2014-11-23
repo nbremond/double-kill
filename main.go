@@ -4,18 +4,18 @@ import (
     "github.com/codegangsta/cli"
 
     "github.com/nbremond/double-kill/commands"
+    "github.com/nbremond/double-kill/modules/settings"
 )
 
-const APP_VER = "0.0.1"
-
 func init() {
+    settings.Version="0.0.0.1"
 }
 
 func main() {
     app := cli.NewApp()
     app.Name = "double-kill"
     app.Usage = "double-kill"
-    app.Version = APP_VER
+    app.Version = settings.Version
     app.Commands = []cli.Command{
         commands.CmdSearch,
     }
