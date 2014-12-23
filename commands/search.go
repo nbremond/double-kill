@@ -39,8 +39,8 @@ func runSearch(c *cli.Context) error {
     //fmt.Println(dbFiles)
     for pos := range dbFiles {
         forFile := dbFiles[pos]
-        if ! file.Exists(forFile.Dir+"/"+forFile.Filename){
-            fmt.Println("Removing «"+forFile.Filename+"» from DB")
+        if ! file.Exists(filepath.Join(forFile.Dir, forFile.Filename)){
+            fmt.Println("Removing «"+forFile.Filename+"» from database.")
             forFile.Delete()
         }
     }
@@ -53,31 +53,21 @@ func indexFile(path string, info os.FileInfo, err error) error {
     if info.IsDir() {
     }else{// path isn' t a dir. We must check if it's a regular file.
         dir, filename := filepath.Split(path)
-        hashError := false
-        tinyHashString := ""
-        if file, fileErr := os.Open(path); fileErr != nil {
-            hashError =true
-        }else{
-            defer file.Close()
-            data := make([]byte, tinyHashSize)
-            n, readErr := file.Read(data)
-            if  readErr != nil {
-                hashError = true
-            }
-            if hashError {
-                log.Println("Unable to compute hash for \""+path+"\"")
-            }else{
-                tinyHash := sha256.New()
-                tinyHash.Write(data[:n])
-                tinyHashString = hex.EncodeToString(tinyHash.Sum(nil))
-            }
+        upToDate := true
+        dbFile := models.GetOrCreateFile(dir, filename)
+        if dbFile.Id == 0 {
+            upToDate = false
         }
-        dbFile := models.File{
-            Dir:        dir,
-            Filename:   filename,
-            Size:       int64(info.Size()),
-            ModTime:    info.ModTime(),
-            TinyHash:   tinyHashString,
+        if dbFile.ModTime != info.ModTime(){
+            dbFile.ModTime = info.ModTime()
+            upToDate = false
+        }
+        if dbFile.Size != info.Size(){
+            dbFile.Size = info.Size()
+            upToDate = false
+        }
+        if ! upToDate {
+            dbFile.TinyHash = computeTinyHash(path)
         }
         dbFile.Save()
         //fmt.Println("done"+dbFile.Filename)
@@ -85,3 +75,27 @@ func indexFile(path string, info os.FileInfo, err error) error {
     return nil
 }
 
+func computeTinyHash(path string) string {
+    hash := ""
+    hashError := false
+    data := make([]byte, tinyHashSize)
+    var numberRead int
+    if file, fileErr := os.Open(path); fileErr != nil {
+        hashError =true
+    }else{
+        defer file.Close()
+        var readErr error
+        numberRead, readErr = file.Read(data)
+        if  readErr != nil {
+            hashError = true
+        }
+    }
+    if hashError {
+        log.Println("Unable to compute hash for \""+path+"\"")
+    }else{
+        tinyHash := sha256.New()
+        tinyHash.Write(data[:numberRead])
+        hash = hex.EncodeToString(tinyHash.Sum(nil))
+    }
+    return hash
+}

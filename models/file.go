@@ -30,7 +30,7 @@ func standardizePath(path string) string{
     path, _ = filepath.Rel(basePath, path)
     //    fmt.Println(err)
     path = filepath.Clean(path)
-    if path == "." {
+    if path == "." || path == "" {
         path = ""
     }else{
         path = path+"/"
@@ -48,6 +48,16 @@ func GetSubfiles(path string) []File {
     var files []File
     db.Where("dir LIKE ?", path+"%").Find(&files)
     return files
+}
+
+func GetOrCreateFile(dir string, filename string) File{
+    dir = standardizePath(dir)
+    file := File{
+        Dir:        dir,
+        Filename:   filename,
+    }
+    db.Where("dir = ? AND filename = ?", dir, filename).Find(&file)
+    return file
 }
 
 func (file *File) Delete() {
