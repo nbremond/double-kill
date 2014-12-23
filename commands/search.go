@@ -9,6 +9,7 @@ import (
     "log"
 
     "github.com/codegangsta/cli"
+    "github.com/AlasdairF/File"
 
     "github.com/nbremond/double-kill/models"
 )
@@ -17,7 +18,7 @@ const tinyHashSize = 10 * 1024
 
 var CmdSearch = cli.Command{
     Name:  "search",
-    Usage: "Search for duplicates",
+    Usage: "search path",
     Description: `Search for duplicates`,
     Before: runSearch,
     Action: func(ctx *cli.Context) {},
@@ -31,13 +32,26 @@ func runSearch(c *cli.Context) error {
     if err = models.InitDB(); err != nil {
         return err
     }
-    fmt.Println("It's working! or not ...")
-    filepath.Walk(c.Args()[0],printFile)
+    basePath := filepath.Clean(c.Args()[0])+"/"
+
+    fmt.Println("Removing deleted subfiles of «"+basePath +"»…")
+    dbFiles := models.GetSubfiles(basePath)
+    //fmt.Println(dbFiles)
+    for pos := range dbFiles {
+        forFile := dbFiles[pos]
+        if ! file.Exists(forFile.Dir+"/"+forFile.Filename){
+            fmt.Println("Removing «"+forFile.Filename+"» from DB")
+            forFile.Delete()
+        }
+    }
+    fmt.Println("Indexing new files…")
+    filepath.Walk(c.Args()[0],indexFile)
     return nil
 }
 
-func printFile(path string, info os.FileInfo, err error) error {
-    if ! info.IsDir() {
+func indexFile(path string, info os.FileInfo, err error) error {
+    if info.IsDir() {
+    }else{// path isn' t a dir. We must check if it's a regular file.
         dir, filename := filepath.Split(path)
         hashError := false
         tinyHashString := ""
@@ -66,6 +80,7 @@ func printFile(path string, info os.FileInfo, err error) error {
             TinyHash:   tinyHashString,
         }
         dbFile.Save()
+        //fmt.Println("done"+dbFile.Filename)
     }
     return nil
 }

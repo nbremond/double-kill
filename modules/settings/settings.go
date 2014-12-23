@@ -4,7 +4,7 @@ import ()
 
 func init() {
     DB.Engine = "sqlite3"
-    DB.Source = "/tmp/test.db"
+    DB.Source = "double-kill.db"
 }
 
 var (

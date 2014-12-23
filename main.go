@@ -8,7 +8,7 @@ import (
 )
 
 func init() {
-    settings.Version = "0.0.0.1"
+    settings.Version = "0.0.1"
 }
 
 func main() {
