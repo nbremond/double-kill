@@ -18,6 +18,7 @@ func main() {
     app.Version = settings.Version
     app.Commands = []cli.Command{
         commands.CmdSearch,
+        commands.CmdSearchDuplicate,
     }
     app.Flags = append(app.Flags, []cli.Flag{}...)
     app.RunAndExitOnError()

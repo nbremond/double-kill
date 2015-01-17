@@ -19,7 +19,7 @@ const tinyHashSize = 10 * 1024
 var CmdSearch = cli.Command{
     Name:  "search",
     Usage: "search path",
-    Description: `Search for duplicates`,
+    Description: `Index files in database`,
     Before: runSearch,
     Action: func(ctx *cli.Context) {},
     Flags:  []cli.Flag{},

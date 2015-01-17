@@ -3,6 +3,7 @@ package models
 import (
     "path/filepath"
     "time"
+    "sort"
     //    "fmt"
 
     _ "github.com/jinzhu/gorm"
@@ -62,4 +63,37 @@ func GetOrCreateFile(dir string, filename string) File{
 
 func (file *File) Delete() {
     db.Delete(file)
+}
+
+
+type fileSorter struct {
+    files  []File
+    by     func(f1,f2 *File) bool
+}
+// Len is part of sort.Interface.
+func (s *fileSorter) Len() int {
+    return len(s.files)
+}
+
+// Swap is part of sort.Interface.
+func (s *fileSorter) Swap(i, j int) {
+    s.files[i], s.files[j] = s.files[j], s.files[i]
+}
+
+// Less is part of sort.Interface. It is implemented by calling the "by" closure in the sorter.
+func (s *fileSorter) Less(i, j int) bool {
+    return s.by(&s.files[i], &s.files[j])
+}
+
+func GetFilesBySize() []File{
+    var files []File
+    db.Find(&files)
+    fs := &fileSorter{
+        files : files,
+        by :    func (f1,f2 *File) bool{
+            return f1.Size < f2.Size
+        },
+    }
+    sort.Sort(fs)
+    return files
 }
