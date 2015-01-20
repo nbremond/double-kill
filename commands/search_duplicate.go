@@ -2,16 +2,13 @@ package commands
 
 import (
     "fmt"
-  //  "os"
-  //  "path/filepath"
-  //  "crypto/sha256"
-  //  "encoding/hex"
-  //  "log"
+    "path/filepath"
+    "sort"
 
     "github.com/codegangsta/cli"
- //   "github.com/AlasdairF/File"
 
     "github.com/nbremond/double-kill/models"
+    "github.com/nbremond/double-kill/helpers"
 )
 
 
@@ -31,16 +28,98 @@ func runSearchDuplicate(c *cli.Context) error {
         return err
     }
     var size int64
-    var potentialFiles []*models.File
+    potentialFiles := make([]*models.File,0,10)
     files := models.GetFilesBySize()
+    if len(files) == 0{
+        fmt.Println("No file inedexed. Run search before search_duplicate")
+        return nil
+    }
+    
+   for pos := range files {
+        forFile := &files[pos]
+        potentialFiles = append(potentialFiles, forFile)
+        size = forFile.Size
+        if pos+1 == len(files) || files[pos+1].Size != size {
+            analyseSameSize(potentialFiles)
+
+            potentialFiles = make([]*models.File,0,10)
+        }
+    }
+    return nil
+}
+
+func analyseSameSize(files []*models.File) {
+    if len(files) < 2 {
+        return
+    }
+    /*
+    fmt.Print(len(files))
+    fmt.Print(" fichiers de taile ")
+    fmt.Print(files[0].Size)
+    fmt.Println()
+    */
+    // first compute all tinyHash
+    allTinyHashesKnown := true
     for pos := range files {
         forFile := files[pos]
-        if forFile.Size != size {
-        size = forFile.Size
-
+        if forFile.TinyHash == "" {
+            forFile.TinyHash = helpers.ComputeTinyHash(filepath.Join(forFile.Dir, forFile.Filename))
+            forFile.Save()
+            if forFile.TinyHash == "" {
+                allTinyHashesKnown = false
+            }
         }
-        //Append(potentialFiles, forFile)
-        fmt.Println(forFile.Size)
     }
-return nil
+    if ! allTinyHashesKnown {
+        fmt.Print(len(files))
+        fmt.Print(" files with the same size but which cannot be compared. (")
+        fmt.Print(files[0].Size)
+        fmt.Println(" bytes)")
+
+    }
+    //then we sort by their tinyhash
+    fs := &fileSorter{
+        files : files,
+        by :    func (f1,f2 *models.File) bool{
+            return f1.TinyHash < f2.TinyHash
+        },
+    }
+    sort.Sort(fs)
+    currentHash := ""
+    potentialFiles := make([]*models.File,0,10)
+    for pos := range files {
+        forFile := files[pos]
+        potentialFiles = append(potentialFiles, forFile)
+            currentHash = forFile.TinyHash
+        //fmt.Println(forFile.TinyHash)
+        if pos+1 == len(files) || files[pos+1].TinyHash != currentHash{
+            if currentHash != "" && len(potentialFiles) > 1{
+                fmt.Print(len(potentialFiles))
+                fmt.Print(" files with the same TinyHash «"+currentHash+"» (")
+                fmt.Print(potentialFiles[0].Size)
+                fmt.Println(" bytes)")
+            }
+            potentialFiles = make([]*models.File,0,10)
+        }
+    }
+}
+
+
+type fileSorter struct {
+    files  []*models.File
+    by     func(f1,f2 *models.File) bool
+}
+// Len is part of sort.Interface.
+func (s *fileSorter) Len() int {
+    return len(s.files)
+}
+
+// Swap is part of sort.Interface.
+func (s *fileSorter) Swap(i, j int) {
+    s.files[i], s.files[j] = s.files[j], s.files[i]
+}
+
+// Less is part of sort.Interface. It is implemented by calling the "by" closure in the sorter.
+func (s *fileSorter) Less(i, j int) bool {
+    return s.by(s.files[i], s.files[j])
 }

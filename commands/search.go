@@ -4,17 +4,14 @@ import (
     "fmt"
     "os"
     "path/filepath"
-    "crypto/sha256"
-    "encoding/hex"
-    "log"
 
     "github.com/codegangsta/cli"
     "github.com/AlasdairF/File"
 
     "github.com/nbremond/double-kill/models"
+    "github.com/nbremond/double-kill/helpers"
 )
 
-const tinyHashSize = 10 * 1024
 
 var CmdSearch = cli.Command{
     Name:  "search",
@@ -54,9 +51,11 @@ func indexFile(path string, info os.FileInfo, err error) error {
     }else{// path isn' t a dir. We must check if it's a regular file.
         dir, filename := filepath.Split(path)
         upToDate := true
+        isNew := false
         dbFile := models.GetOrCreateFile(dir, filename)
         if dbFile.Id == 0 {
             upToDate = false
+            isNew = true
         }
         if dbFile.ModTime != info.ModTime(){
             dbFile.ModTime = info.ModTime()
@@ -67,7 +66,10 @@ func indexFile(path string, info os.FileInfo, err error) error {
             upToDate = false
         }
         if ! upToDate {
-            dbFile.TinyHash = computeTinyHash(path)
+            dbFile.TinyHash = ""
+            if isNew {
+                dbFile.TinyHash = helpers.ComputeTinyHash(path)
+            }
         }
         dbFile.Save()
         //fmt.Println("done"+dbFile.Filename)
@@ -75,27 +77,3 @@ func indexFile(path string, info os.FileInfo, err error) error {
     return nil
 }
 
-func computeTinyHash(path string) string {
-    hash := ""
-    hashError := false
-    data := make([]byte, tinyHashSize)
-    var numberRead int
-    if file, fileErr := os.Open(path); fileErr != nil {
-        hashError =true
-    }else{
-        defer file.Close()
-        var readErr error
-        numberRead, readErr = file.Read(data)
-        if  readErr != nil {
-            hashError = true
-        }
-    }
-    if hashError {
-        log.Println("Unable to compute hash for \""+path+"\"")
-    }else{
-        tinyHash := sha256.New()
-        tinyHash.Write(data[:numberRead])
-        hash = hex.EncodeToString(tinyHash.Sum(nil))
-    }
-    return hash
-}
