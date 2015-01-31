@@ -67,6 +67,7 @@ func indexFile(path string, info os.FileInfo, err error) error {
         }
         if ! upToDate {
             dbFile.TinyHash = ""
+            dbFile.Hash = ""
             if isNew {
                 dbFile.TinyHash = helpers.ComputeTinyHash(path)
             }

@@ -94,16 +94,89 @@ func analyseSameSize(files []*models.File) {
         //fmt.Println(forFile.TinyHash)
         if pos+1 == len(files) || files[pos+1].TinyHash != currentHash{
             if currentHash != "" && len(potentialFiles) > 1{
-                fmt.Print(len(potentialFiles))
-                fmt.Print(" files with the same TinyHash «"+currentHash+"» (")
-                fmt.Print(potentialFiles[0].Size)
-                fmt.Println(" bytes)")
+/////Maybe set a verbosity level ?
+                //fmt.Print(len(potentialFiles))
+                //fmt.Print(" files with the same TinyHash «"+currentHash+"» (")
+                //fmt.Print(potentialFiles[0].Size)
+                //fmt.Println(" bytes)")
+                
+                ///// are the set realy usefull ?
+                //m := models.MatchingFilesSet{
+                //    Level:  models.TinyHash,
+                //    Files:  make([]models.File,0,10),
+                //}
+                //for _,e := range potentialFiles {
+                //m.Files = append(m.Files, *e)
+                //}
+                //m.Save()
+                //////
+                analyseSameTinyHash(potentialFiles)
             }
             potentialFiles = make([]*models.File,0,10)
         }
     }
 }
 
+
+
+func analyseSameTinyHash(files []*models.File) {
+    if len(files) < 2 {
+        return
+    }
+    // first compute all Hash
+    allHashesKnown := true
+    for _,forFile := range files {
+        if forFile.Hash == "" {
+            forFile.Hash = helpers.ComputeHash(filepath.Join(forFile.Dir, forFile.Filename))
+            forFile.Save()
+            if forFile.Hash == "" {
+                allHashesKnown = false
+            }
+        }
+    }
+    if ! allHashesKnown {
+        fmt.Print(len(files))
+        fmt.Print(" files with the same TinyHash but which cannot be compared. (")
+        fmt.Print(files[0].Size)
+        fmt.Println(" bytes)")
+
+    }
+    //then we sort by their hash
+    fs := &fileSorter{
+        files : files,
+        by :    func (f1,f2 *models.File) bool{
+            return f1.Hash < f2.Hash
+        },
+    }
+    sort.Sort(fs)
+    currentHash := ""
+    potentialFiles := make([]*models.File,0,10)
+    for pos := range files {
+        forFile := files[pos]
+        potentialFiles = append(potentialFiles, forFile)
+            currentHash = forFile.Hash
+        //fmt.Println(forFile.TinyHash)
+        if pos+1 == len(files) || files[pos+1].Hash != currentHash{
+            if currentHash != "" && len(potentialFiles) > 1{
+                fmt.Print(len(potentialFiles))
+                fmt.Print(" files with the same Hash «"+currentHash+"» (")
+                fmt.Print(potentialFiles[0].Size)
+                fmt.Println(" bytes)")
+                ///// are the set realy usefull ?
+                //m := models.MatchingFilesSet{
+                //    Level:  models.TinyHash,
+                //    Files:  make([]models.File,0,10),
+                //}
+                //for _,e := range potentialFiles {
+                //m.Files = append(m.Files, *e)
+                //}
+                //m.Save()
+                //////
+            }
+            potentialFiles = make([]*models.File,0,10)
+        }
+    }
+}
 
 type fileSorter struct {
     files  []*models.File
