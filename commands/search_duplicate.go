@@ -162,16 +162,7 @@ func analyseSameTinyHash(files []*models.File) {
                 fmt.Print(" files with the same Hash «"+currentHash+"» (")
                 fmt.Print(potentialFiles[0].Size)
                 fmt.Println(" bytes)")
-                ///// are the set realy usefull ?
-                //m := models.MatchingFilesSet{
-                //    Level:  models.TinyHash,
-                //    Files:  make([]models.File,0,10),
-                //}
-                //for _,e := range potentialFiles {
-                //m.Files = append(m.Files, *e)
-                //}
-                //m.Save()
-                //////
+                helpers.SortFilesByteByByte(potentialFiles)
             }
             potentialFiles = make([]*models.File,0,10)
         }
