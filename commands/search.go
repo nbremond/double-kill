@@ -4,6 +4,7 @@ import (
     "fmt"
     "os"
     "path/filepath"
+    "log"
 
     "github.com/codegangsta/cli"
     "github.com/AlasdairF/File"
@@ -47,6 +48,10 @@ func runSearch(c *cli.Context) error {
 }
 
 func indexFile(path string, info os.FileInfo, err error) error {
+    if err != nil {
+        log.Println(err)
+        return err
+    }
     if info.IsDir() {
     }else{// path isn' t a dir. We must check if it's a regular file.
         dir, filename := filepath.Split(path)
