@@ -34,8 +34,8 @@ func runSearchDuplicate(c *cli.Context) error {
         fmt.Println("No file inedexed. Run search before search_duplicate")
         return nil
     }
-    
-   for pos := range files {
+
+    for pos := range files {
         forFile := &files[pos]
         potentialFiles = append(potentialFiles, forFile)
         size = forFile.Size
@@ -90,16 +90,16 @@ func analyseSameSize(files []*models.File) {
     for pos := range files {
         forFile := files[pos]
         potentialFiles = append(potentialFiles, forFile)
-            currentHash = forFile.TinyHash
+        currentHash = forFile.TinyHash
         //fmt.Println(forFile.TinyHash)
         if pos+1 == len(files) || files[pos+1].TinyHash != currentHash{
             if currentHash != "" && len(potentialFiles) > 1{
-/////Maybe set a verbosity level ?
+                /////Maybe set a verbosity level ?
                 //fmt.Print(len(potentialFiles))
                 //fmt.Print(" files with the same TinyHash «"+currentHash+"» (")
                 //fmt.Print(potentialFiles[0].Size)
                 //fmt.Println(" bytes)")
-                
+
                 ///// are the set realy usefull ?
                 //m := models.MatchingFilesSet{
                 //    Level:  models.TinyHash,
@@ -154,7 +154,7 @@ func analyseSameTinyHash(files []*models.File) {
     for pos := range files {
         forFile := files[pos]
         potentialFiles = append(potentialFiles, forFile)
-            currentHash = forFile.Hash
+        currentHash = forFile.Hash
         //fmt.Println(forFile.TinyHash)
         if pos+1 == len(files) || files[pos+1].Hash != currentHash{
             if currentHash != "" && len(potentialFiles) > 1{
@@ -162,7 +162,20 @@ func analyseSameTinyHash(files []*models.File) {
                 fmt.Print(" files with the same Hash «"+currentHash+"» (")
                 fmt.Print(potentialFiles[0].Size)
                 fmt.Println(" bytes)")
-                helpers.SortFilesByteByByte(potentialFiles)
+                sortedFiles,sortErr := helpers.SortFilesByteByByte(potentialFiles)
+                if sortErr == nil {
+                    for _,fileSet := range sortedFiles {
+                        if len(fileSet) > 1 {
+                            fmt.Print(len(fileSet))
+                            fmt.Println(" files are strictly identical")
+                            for _,file := range fileSet {
+                                fmt.Println(filepath.Join(file.Dir, file.Filename))
+                            }
+                        }
+                    }
+                } else {
+                    fmt.Println(sortErr)
+                }
             }
             potentialFiles = make([]*models.File,0,10)
         }
