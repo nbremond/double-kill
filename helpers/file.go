@@ -10,7 +10,7 @@ import (
     "github.com/nbremond/double-kill/models"
 )
 
-const blockSize = 1024
+const blockSize = 1024 //buffer size for reading files
 
 type openFile struct {
     originFile  *models.File
@@ -55,7 +55,6 @@ func SortFilesByteByByte(files []*models.File) ([][]*models.File, error) {
     err = rootSet.compute()
     res := make([][]*models.File,0,10)
     rootSet.formatAndClose(&res)
-    //fmt.Println(len(firstFile.data))
     return res,err
 }
 
@@ -100,12 +99,10 @@ func compareBlock(b1, b2 []byte) bool {
 
 func (fs *fileSet) compute() error {
     pos := fs.changingBlockPos
-    for len(fs.CheckedFiles[0].data) > 0 {
+    for len(fs.CheckedFiles[0].data) > 0 {//iterate on all blocks of the file
         newToCheckFiles := make([]openFile,0,10) //this is used to remove files from the slice fs.ToCheckFiles
         for _,file := range fs.ToCheckFiles {
             if !compareBlock(file.data, fs.CheckedFiles[0].data) {
-log.Println(file.data)
-log.Println(fs.CheckedFiles[0].data)
                 if len(fs.childs) > 0 && pos == fs.childs[len(fs.childs)-1].changingBlockPos {
                     newfs := fs.childs[len(fs.childs)-1]
                     newfs.ToCheckFiles = append(newfs.CheckedFiles, file)
