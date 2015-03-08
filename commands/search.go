@@ -5,6 +5,7 @@ import (
     "os"
     "path/filepath"
     "log"
+    "strings"
 
     "github.com/codegangsta/cli"
     "github.com/AlasdairF/File"
@@ -22,17 +23,19 @@ var CmdSearch = cli.Command{
     Flags:  []cli.Flag{
         cli.IntFlag{"remove, r",-1,"The Maximum number of files to delete. -1 means no limit. This is usefull if you use a distant filesystem and if you lose connection",""},
         cli.BoolFlag{"tiny-hash, t", "Compute a tiny hash (on the first bytes) of every file",""},
-        cli.StringSliceFlag{"ignore-dir",&cli.StringSlice{},"Files in the listed directories will not be indexed",""},
+        cli.StringSliceFlag{"ignore-dir",&ignore_dir_slice,"Files in the listed directories will not be indexed",""},
     },
 }
 
 var computeTinyHash bool
 var ignore_dir []string
+var ignore_dir_slice = cli.StringSlice{}
 
 func runSearch(c *cli.Context) error {
     var err error
-    computeTinyHash = c.Bool("tiny_hash")
-    ignore_dir = c.StringSlice("ignore_dir")
+    computeTinyHash = c.Bool("tiny-hash")
+    ignore_dir = ignore_dir_slice.Value()
+    ignore_dir = c.StringSlice("ignore-dir")
     if err = models.InitDB(); err != nil {
         return err
     }
@@ -67,7 +70,7 @@ func indexFile(path string, info os.FileInfo, err error) error {
     }
     if info.IsDir() {
         for _,value := range ignore_dir{
-            if value == path {
+            if strings.HasPrefix(path,value) {
                 return filepath.SkipDir
             }
         }
