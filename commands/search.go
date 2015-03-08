@@ -13,20 +13,26 @@ import (
     "github.com/nbremond/double-kill/helpers"
 )
 
-
 var CmdSearch = cli.Command{
     Name:  "search",
     Usage: "search path",
     Description: `Index files in database`,
     Before: runSearch,
     Action: func(ctx *cli.Context) {},
-    Flags:  []cli.Flag{},
+    Flags:  []cli.Flag{
+        cli.IntFlag{"remove, r",-1,"The Maximum number of files to delete. -1 means no limit. This is usefull if you use a distant filesystem and if you lose connection",""},
+        cli.BoolFlag{"tiny-hash, t", "Compute a tiny hash (on the first bytes) of every file",""},
+        cli.StringSliceFlag{"ignore-dir",&cli.StringSlice{},"Files in the listed directories will not be indexed",""},
+    },
 }
 
+var computeTinyHash bool
+var ignore_dir []string
 
 func runSearch(c *cli.Context) error {
     var err error
-
+    computeTinyHash = c.Bool("tiny_hash")
+    ignore_dir = c.StringSlice("ignore_dir")
     if err = models.InitDB(); err != nil {
         return err
     }
@@ -35,10 +41,17 @@ func runSearch(c *cli.Context) error {
     fmt.Println("Removing deleted subfiles of «"+basePath +"»…")
     dbFiles := models.GetSubfiles(basePath)
     //fmt.Println(dbFiles)
+    removedFiles := 0
     for pos := range dbFiles {
+        if c.Int("remove") == removedFiles {
+            fmt.Print(removedFiles)
+            fmt.Println(" files removed. abort.")
+            break
+        }
         forFile := dbFiles[pos]
         if ! file.Exists(filepath.Join(forFile.Dir, forFile.Filename)){
             fmt.Println("Removing «"+forFile.Filename+"» from database.")
+            removedFiles++;
             forFile.Delete()
         }
     }
@@ -50,9 +63,14 @@ func runSearch(c *cli.Context) error {
 func indexFile(path string, info os.FileInfo, err error) error {
     if err != nil {
         log.Println(err)
-        return err
+        return nil
     }
     if info.IsDir() {
+        for _,value := range ignore_dir{
+            if value == path {
+                return filepath.SkipDir
+            }
+        }
     }else{// path isn' t a dir. We must check if it's a regular file.
         dir, filename := filepath.Split(path)
         upToDate := true
@@ -70,10 +88,10 @@ func indexFile(path string, info os.FileInfo, err error) error {
             dbFile.Size = info.Size()
             upToDate = false
         }
-        if ! upToDate {
+        if ! upToDate{
             dbFile.TinyHash = ""
             dbFile.Hash = ""
-            if isNew {
+            if isNew && computeTinyHash{
                 dbFile.TinyHash = helpers.ComputeTinyHash(path)
             }
         }
