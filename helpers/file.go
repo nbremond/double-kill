@@ -1,7 +1,7 @@
 package helpers
 
 import (
- //   "fmt"
+    "fmt"
     "os"
     "path/filepath"
     "log"
@@ -67,6 +67,7 @@ func open(originFile *models.File) (openFile, error) {
     path := filepath.Join(originFile.Dir, originFile.Filename)
     file.osFile,err = os.Open(path)
     if err != nil {
+        fmt.Println()//there is no newline after the progress status
         log.Println("Unable to open \"" + path + "\"")
         return file, err
     }
@@ -82,6 +83,7 @@ func (f *openFile) read() error {
     }
     if err != nil {
         path := filepath.Join(f.originFile.Dir, f.originFile.Filename)
+        fmt.Println()//there is no newline after the progress status
         log.Println("Unable to read \"" + path + "\"")
     }
     return err

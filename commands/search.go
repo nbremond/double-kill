@@ -22,7 +22,7 @@ var CmdSearch = cli.Command{
     Action: func(ctx *cli.Context) {},
     Flags:  []cli.Flag{
         cli.IntFlag{"remove, r",-1,"The Maximum number of files to delete. -1 means no limit. This is usefull if you use a distant filesystem and if you lose connection",""},
-        cli.BoolFlag{"tiny-hash, t", "Compute a tiny hash (on the first bytes) of every file",""},
+        cli.BoolFlag{"tiny-hash, t", "Compute a tiny hash (on the first bytes) of every new file",""},
         cli.StringSliceFlag{"ignore-dir",&ignore_dir_slice,"Files in the listed directories will not be indexed",""},
     },
 }
@@ -65,6 +65,7 @@ func runSearch(c *cli.Context) error {
 
 func indexFile(path string, info os.FileInfo, err error) error {
     if err != nil {
+        fmt.Println()//there is no newline after the progress status
         log.Println(err)
         return nil
     }
@@ -76,6 +77,7 @@ func indexFile(path string, info os.FileInfo, err error) error {
         }
     }else{// path isn' t a dir. We must check if it's a regular file.
         dir, filename := filepath.Split(path)
+        fmt.Print("\r\033[Kchecking "+path)
         upToDate := true
         isNew := false
         dbFile := models.GetOrCreateFile(dir, filename)
@@ -99,7 +101,6 @@ func indexFile(path string, info os.FileInfo, err error) error {
             }
         }
         dbFile.Save()
-        //fmt.Println("done"+dbFile.Filename)
     }
     return nil
 }

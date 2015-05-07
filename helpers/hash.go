@@ -5,6 +5,7 @@ import (
     "os"
     "crypto/sha256"
     "encoding/hex"
+    "fmt"
     "log"
     "io"
 )
@@ -28,6 +29,7 @@ func ComputeTinyHash(path string) string {
         }
     }
     if hashError {
+        fmt.Println()//there is no newline after the progress status
         log.Println("Unable to compute TinyHash for \""+path+"\"")
     }else{
         tinyHash := sha256.New()
@@ -51,6 +53,7 @@ func ComputeHash(path string) string {
         }
     }
     if hashError {
+        fmt.Println()//there is no newline after the progress status
         log.Println("Unable to compute hash for \""+path+"\"")
     }else{
         hash = hex.EncodeToString(hashObject.Sum(nil))
