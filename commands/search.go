@@ -78,24 +78,12 @@ func indexFile(path string, info os.FileInfo, err error) error {
     }else{// path isn' t a dir. We must check if it's a regular file.
         dir, filename := filepath.Split(path)
         fmt.Print("\r\033[Kchecking "+path)
-        upToDate := true
         isNew := false
         dbFile := models.GetOrCreateFile(dir, filename)
         if dbFile.Id == 0 {
-            upToDate = false
             isNew = true
         }
-        if dbFile.ModTime != info.ModTime(){
-            dbFile.ModTime = info.ModTime()
-            upToDate = false
-        }
-        if dbFile.Size != info.Size(){
-            dbFile.Size = info.Size()
-            upToDate = false
-        }
-        if ! upToDate{
-            dbFile.TinyHash = ""
-            dbFile.Hash = ""
+        if ! dbFile.IsUpToDate(info){
             if isNew && computeTinyHash{
                 dbFile.TinyHash = helpers.ComputeTinyHash(path)
             }

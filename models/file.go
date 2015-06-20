@@ -3,6 +3,7 @@ package models
 import (
     "path/filepath"
     "time"
+    "os"
     //    "fmt"
 
     _ "github.com/jinzhu/gorm"
@@ -65,9 +66,54 @@ func (file *File) Delete() {
 }
 
 
-
 func GetFilesBySize() []File{
     var files []File
     db.Order("size desc").Find(&files)
     return files
+}
+
+func GetMatchingHashFiles() [][]File{
+    var sortedFiles []File
+    var groupedFiles [][]File
+    db.Order("size desc").Order("tiny_hash desc").Order("hash").Find(&sortedFiles)
+    currentFiles := make([]File,0,10)
+    currentSize := int64(0)
+    currentTinyHash := ""
+    currentHash := ""
+    for _,f := range sortedFiles{
+        if (f.Size != currentSize) ||
+        (f.TinyHash != currentTinyHash) ||
+        (f.Hash != currentHash) {
+            if len(currentFiles) > 1{
+                groupedFiles = append(groupedFiles, currentFiles)
+            }
+            currentFiles = make([]File,0,10)
+            currentSize = f.Size
+            currentTinyHash = f.TinyHash
+            currentHash = f.Hash
+        }
+        currentFiles = append(currentFiles, f)
+    }
+    return groupedFiles
+}
+
+func (dbFile *File) IsUpToDate(info os.FileInfo) bool {
+    upToDate := true
+    if dbFile.Id == 0 {
+        upToDate = false
+    }
+    if dbFile.ModTime != info.ModTime().UTC(){
+        dbFile.ModTime = info.ModTime().UTC()
+        upToDate = false
+    }
+    if dbFile.Size != info.Size(){
+        dbFile.Size = info.Size()
+        upToDate = false
+    }
+    if ! upToDate{
+        dbFile.TinyHash = ""
+        dbFile.Hash = ""
+    }
+    dbFile.Save()
+    return upToDate
 }
